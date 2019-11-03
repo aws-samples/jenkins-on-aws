@@ -16,7 +16,7 @@ class BonjourFargate(core.Stack):
         # NOTE: Limit AZs to avoid reaching resource quotas
         vpc = ec2.Vpc(
             self, "MyVpc",
-            max_azs=2
+            max_azs=3
         )
 
         cluster = ecs.Cluster(
