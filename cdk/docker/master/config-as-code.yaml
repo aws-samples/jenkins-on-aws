@@ -1,0 +1,21 @@
+jenkins:
+  clouds:
+    - ecs:
+        cluster: "arn:aws:ecs:us-west-2:282590142939:cluster/JenkinsOnAWSECS-ECSCluster7D463CD4-RJOX9BBXNX98"
+        regionName: us-west-2
+        name: fargate-workers
+        jenkinsUrl: "http://testing.jenkins:8080"
+        templates:
+          - label: fargate-workers
+            templateName: fargate-worker-nodes
+            image: jenkins/jnlp-slave
+            launchType: FARGATE
+            networkMode: awsvpc
+            # Soft memory limit
+            memoryReservation: 2048
+            cpu: 1024
+            subnets: "subnet-05e555e5df8947c80,subnet-014204d7b43ae8f0e"
+            securityGroups: "sg-01feedb1c914a9338"
+
+
+
