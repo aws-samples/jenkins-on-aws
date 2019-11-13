@@ -1,0 +1,32 @@
+jenkins:
+  clouds:
+    - ecs:
+        cluster: {{ECS_CLUSTER_ARN}}
+        # Credentials should not be set locally. Use IAM roles assigned to the container.
+        credentialsId: False
+        regionName: {{AWS_REGION}}
+        name: fargate-workers
+        jenkinsUrl: {{JENKINS_URL}}
+        templates:
+          - label: fargate-workers
+            templateName: fargate-worker-nodes
+            # Build image and store in ECR. Benefits: fast download time, control image on your own
+            image: jenkins/jnlp-slave
+            launchType: FARGATE
+            networkMode: awsvpc
+            # Soft memory limit
+            memoryReservation: 2048
+            cpu: 1024
+            subnets: {{SUBNET_IDS}}
+            securityGroups: {{SECURITY_GROUP_IDS}}
+            executionRole: {{EXECUTION_ROLE_ARN}}
+            taskrole: {{TASK_ROLE_ARN}}
+            logDriver: awslogs
+            logDriverOptions:
+              - name: awslogs-region
+                value: {{AWS_REGION}}
+              - name: awslogs-group
+                value: {{LOG_GROUP}}
+              - name: awslogs-stream-prefix
+                value: {{LOG_STREAM_PREFIX}}
+

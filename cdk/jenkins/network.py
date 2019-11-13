@@ -13,3 +13,4 @@ class Network(core.Stack):
             self, "Vpc",
             cidr='10.0.0.0/24',
         )
+

@@ -1,21 +1,25 @@
 jenkins:
   clouds:
     - ecs:
-        cluster: "arn:aws:ecs:us-west-2:282590142939:cluster/JenkinsOnAWSECS-ECSCluster7D463CD4-RJOX9BBXNX98"
+        cluster: ${Token[TOKEN.89]}
+        # Credentials should not be set locally. Use IAM roles assigned to the container.
+        credentialsId: False
         regionName: us-west-2
         name: fargate-workers
-        jenkinsUrl: "http://testing.jenkins:8080"
+        jenkinsUrl: http://master.jenkins:8080
         templates:
           - label: fargate-workers
             templateName: fargate-worker-nodes
+            # Build image and store in ECR. Benefits: fast download time, control image on your own
             image: jenkins/jnlp-slave
             launchType: FARGATE
             networkMode: awsvpc
             # Soft memory limit
             memoryReservation: 2048
             cpu: 1024
-            subnets: "subnet-05e555e5df8947c80,subnet-014204d7b43ae8f0e"
-            securityGroups: "sg-01feedb1c914a9338"
-
+            subnets: [<aws_cdk.aws_ec2.PrivateSubnet object at 0x10b15fac8>, <aws_cdk.aws_ec2.PrivateSubnet object at 0x10b15fcf8>]
+            securityGroups: None
+            executionRole: ${Token[TOKEN.150]}
+            taskrole: BLANK
 
 
