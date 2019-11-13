@@ -1,7 +1,4 @@
-
-# Welcome to your CDK Python project!
-
-This is a blank project for Python development with CDK.
+# CDK Python
 
 The `cdk.json` file tells the CDK Toolkit how to execute your app.
 
@@ -12,6 +9,12 @@ directory.  To create the virtualenv it assumes that there is a `python3`
 package. If for any reason the automatic creation of the virtualenv fails,
 you can create the virtualenv manually.
 
+## Automatic setup
+```
+source setup_env
+```
+
+## Manual setup
 To manually create a virtualenv on MacOS and Linux:
 
 ```
@@ -46,6 +49,15 @@ $ cdk synth
 To add additional dependencies, for example other CDK libraries, just add
 them to your `setup.py` file and rerun the `pip install -r requirements.txt`
 command.
+
+## To deploy & destroy
+```
+# Deploy 
+cdk deploy --require-approval never
+
+# Destroy
+cdk destroy --force
+```
 
 # Useful commands
 

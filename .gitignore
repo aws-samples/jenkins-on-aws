@@ -1,6 +1,3 @@
-*.swp
-*.*~
-project.lock.json
 .DS_Store
 *.pyc
 cdk/.env
@@ -8,26 +5,8 @@ cdk/__pycache__*
 cdk/cdk.out
 cdk/cdk/cdk.egg*
 
-# User-specific files
-*.suo
-*.user
-*.userosscache
-*.sln.docstates
-
-# Build results
-[Dd]ebug/
-[Dd]ebugPublic/
-[Rr]elease/
-[Rr]eleases/
-x64/
-x86/
-build/
-bld/
-[Bb]in/
-[Oo]bj/
-msbuild.log
-msbuild.err
-msbuild.wrn
+# Python Virtual Env
+.env
 
 # Visual Studio
 .vs/
@@ -38,3 +17,6 @@ msbuild.wrn
 
 # Node Modules
 node_modules/
+
+# CDK output
+cdk/cdk.out
