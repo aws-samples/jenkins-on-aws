@@ -1,5 +1,9 @@
 .DS_Store
 *.pyc
+cdk/.env
+cdk/__pycache__*
+cdk/cdk.out
+cdk/cdk/cdk.egg*
 
 # Python Virtual Env
 .env
