@@ -50,39 +50,40 @@ class JenkinsMaster(core.Stack):
             },
         )
 
-        ########## EC2 ##########
-        # Create the Jenkins master service
-        #self.jenkins_master_service = ecs_patterns.ApplicationLoadBalancedEc2Service(
-        #    self, "JenkinsMasterService",
-        #    cpu=4096,
-        #    memory_limit_mib=8192,
-        #    cluster=self.cluster,
-        #    desired_count=1,
-        #    enable_ecs_managed_tags=True,
-        #    task_image_options=self.jenkins_task,
-        #    cloud_map_options=ecs.CloudMapOptions(name="master"),
-        #)
+        # TODO: Make cpu, memory, instance type, and other variable items to environment variables
+        if getenv('FARGATE_ENABLED') or not getenv('EC2_ENABLED'):
+            # Create the Jenkins master service
+            self.jenkins_master_service = ecs_patterns.ApplicationLoadBalancedFargateService(
+                self, "JenkinsMasterService",
+                cpu=4096,
+                memory_limit_mib=8192,
+                cluster=self.cluster.cluster,
+                desired_count=1,
+                enable_ecs_managed_tags=True,
+                task_image_options=self.jenkins_task,
+                cloud_map_options=ecs.CloudMapOptions(name="master", dns_record_type=sd.DnsRecordType('A'))
+            )
 
-        #self.jenkins_master_service.cluster.add_capacity(
-        #    "Ec2",
-        #    instance_type=ec2.InstanceType("t3.xlarge"),
-        #    key_name="jenkinsonaws"
-        #)
-        ########## END EC2 ##########
+        if getenv('EC2_ENABLED'):
+            # Create the Jenkins master service
+            self.jenkins_master_service = ecs_patterns.ApplicationLoadBalancedEc2Service(
+                self, "JenkinsMasterService",
+                cpu=4096,
+                memory_limit_mib=8192,
+                cluster=self.cluster,
+                desired_count=1,
+                enable_ecs_managed_tags=True,
+                task_image_options=self.jenkins_task,
+                cloud_map_options=ecs.CloudMapOptions(name="master"),
+            )
 
-        ################## FARGATE ######################
-        # Create the Jenkins master service
-        self.jenkins_master_service = ecs_patterns.ApplicationLoadBalancedFargateService(
-            self, "JenkinsMasterService",
-            cpu=4096,
-            memory_limit_mib=8192,
-            cluster=self.cluster.cluster,
-            desired_count=1,
-            enable_ecs_managed_tags=True,
-            task_image_options=self.jenkins_task,
-            cloud_map_options=ecs.CloudMapOptions(name="master", dns_record_type=sd.DnsRecordType('A'))
-        )
-        ################## END FARGATE ######################
+            self.jenkins_master_service.cluster.add_capacity(
+                "Ec2",
+                instance_type=ec2.InstanceType("t3.xlarge"),
+                key_name="jenkinsonaws"
+            )
+
+            # TODO: Add EFS if EC2 enabled
 
         # Opening port 5000 for master <--> worker communications
         self.jenkins_master_service.task_definition.default_container.add_port_mappings(
