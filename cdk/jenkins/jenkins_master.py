@@ -5,6 +5,8 @@ from aws_cdk import (
     aws_ec2 as ec2,
     aws_servicediscovery as sd,
     aws_iam as iam,
+    aws_logs as logs,
+    aws_elasticloadbalancingv2 as elb,
     core
 )
 
@@ -25,35 +27,35 @@ class JenkinsMaster(core.Stack):
             directory='./docker/master/'
         )
 
-        # Task definition details to define the Jenkins master container
-        self.jenkins_task = ecs_patterns.ApplicationLoadBalancedTaskImageOptions(
-            image=ecs.ContainerImage.from_ecr_repository(self.container_image.repository),
-            container_port=8080,
-            enable_logging=True,
-            environment={
-                # https://github.com/jenkinsci/docker/blob/master/README.md#passing-jvm-parameters
-                'JAVA_OPTS': '-Djenkins.install.runSetupWizard=false',
-                # https://github.com/jenkinsci/configuration-as-code-plugin/blob/master/README.md#getting-started
-                'CASC_JENKINS_CONFIG': '/var/jenkins_home/config-as-code.yaml',
-                'network_stack': self.vpc.stack_name,
-                'cluster_stack': self.cluster.stack_name,
-                'worker_stack': self.worker.stack_name,
-                'cluster_arn': self.cluster.cluster.cluster_arn,
-                'aws_region': getenv('CDK_DEFAULT_REGION'),
-                'jenkins_url': 'http://master.jenkins:8080',  # TODO: make this a variable
-                'subnet_ids': ",".join([x.subnet_id for x in self.vpc.vpc.private_subnets]),
-                'security_group_ids': self.worker.worker_security_group.security_group_id,
-                'execution_role_arn': self.worker.worker_execution_role.role_arn,
-                'task_role_arn': self.worker.worker_task_role.role_arn,
-                'worker_log_group': self.worker.worker_logs_group.log_group_name,
-                'worker_log_stream_prefix': self.worker.worker_log_stream.log_stream_name
-            },
-        )
-
         # TODO: Make cpu, memory, instance type, and other variable items to environment variables
         if getenv('FARGATE_ENABLED') or not getenv('EC2_ENABLED'):
+            # Task definition details to define the Jenkins master container
+            self.jenkins_task = ecs_patterns.ApplicationLoadBalancedTaskImageOptions(
+                image=ecs.ContainerImage.from_ecr_repository(self.container_image.repository),
+                container_port=8080,
+                enable_logging=True,
+                environment={
+                    # https://github.com/jenkinsci/docker/blob/master/README.md#passing-jvm-parameters
+                    'JAVA_OPTS': '-Djenkins.install.runSetupWizard=false',
+                    # https://github.com/jenkinsci/configuration-as-code-plugin/blob/master/README.md#getting-started
+                    'CASC_JENKINS_CONFIG': '/var/jenkins_home/config-as-code.yaml',
+                    'network_stack': self.vpc.stack_name,
+                    'cluster_stack': self.cluster.stack_name,
+                    'worker_stack': self.worker.stack_name,
+                    'cluster_arn': self.cluster.cluster.cluster_arn,
+                    'aws_region': getenv('CDK_DEFAULT_REGION'),
+                    'jenkins_url': 'http://master.jenkins:8080',  # TODO: make this a variable
+                    'subnet_ids': ",".join([x.subnet_id for x in self.vpc.vpc.private_subnets]),
+                    'security_group_ids': self.worker.worker_security_group.security_group_id,
+                    'execution_role_arn': self.worker.worker_execution_role.role_arn,
+                    'task_role_arn': self.worker.worker_task_role.role_arn,
+                    'worker_log_group': self.worker.worker_logs_group.log_group_name,
+                    'worker_log_stream_prefix': self.worker.worker_log_stream.log_stream_name
+                },
+            )
+
             # Create the Jenkins master service
-            self.jenkins_master_service = ecs_patterns.ApplicationLoadBalancedFargateService(
+            self.jenkins_master_service_main = ecs_patterns.ApplicationLoadBalancedFargateService(
                 self, "JenkinsMasterService",
                 cpu=4096,
                 memory_limit_mib=8192,
@@ -64,23 +66,85 @@ class JenkinsMaster(core.Stack):
                 cloud_map_options=ecs.CloudMapOptions(name="master", dns_record_type=sd.DnsRecordType('A'))
             )
 
+            self.jenkins_master_service = self.jenkins_master_service_main.service
+            self.jenkins_master_task = self.jenkins_master_service.task_definition
+
         if getenv('EC2_ENABLED'):
-            # Create the Jenkins master service
-            self.jenkins_master_service = ecs_patterns.ApplicationLoadBalancedEc2Service(
-                self, "JenkinsMasterService",
+            self.jenkins_load_balancer = elb.ApplicationLoadBalancer(
+                self, "JenkinsMasterELB",
+                vpc=self.vpc.vpc,
+                internet_facing=True,
+            )
+
+            self.listener = self.jenkins_load_balancer.add_listener("Listener", port=80)
+
+            self.jenkins_master_task = ecs.Ec2TaskDefinition(
+                self, "JenkinsMasterTaskDef",
+                network_mode=ecs.NetworkMode.AWS_VPC,
+            )
+
+            self.jenkins_master_task.add_container(
+                "JenkinsMasterContainer",
+                image=ecs.ContainerImage.from_ecr_repository(self.container_image.repository),
                 cpu=4096,
                 memory_limit_mib=8192,
-                cluster=self.cluster,
+                environment={
+                    # https://github.com/jenkinsci/docker/blob/master/README.md#passing-jvm-parameters
+                    'JAVA_OPTS': '-Djenkins.install.runSetupWizard=false',
+                    # https://github.com/jenkinsci/configuration-as-code-plugin/blob/master/README.md#getting-started
+                    'CASC_JENKINS_CONFIG': '/var/jenkins_home/config-as-code.yaml',
+                    'network_stack': self.vpc.stack_name,
+                    'cluster_stack': self.cluster.stack_name,
+                    'worker_stack': self.worker.stack_name,
+                    'cluster_arn': self.cluster.cluster.cluster_arn,
+                    'aws_region': getenv('CDK_DEFAULT_REGION'),
+                    'jenkins_url': 'http://master.jenkins:8080',  # TODO: make this a variable
+                    'subnet_ids': ",".join([x.subnet_id for x in self.vpc.vpc.private_subnets]),
+                    'security_group_ids': self.worker.worker_security_group.security_group_id,
+                    'execution_role_arn': self.worker.worker_execution_role.role_arn,
+                    'task_role_arn': self.worker.worker_task_role.role_arn,
+                    'worker_log_group': self.worker.worker_logs_group.log_group_name,
+                    'worker_log_stream_prefix': self.worker.worker_log_stream.log_stream_name
+                },
+                logging=ecs.LogDriver.aws_logs(
+                    stream_prefix="JenkinsMaster",
+                    log_retention=logs.RetentionDays.ONE_WEEK
+                ),
+            )
+
+            self.jenkins_master_task.default_container.add_port_mappings(
+                ecs.PortMapping(
+                    container_port=8080,
+                    host_port=8080
+                )
+            )
+
+            self.jenkins_master_service = ecs.Ec2Service(
+                self, "EC2MasterService",
+                task_definition=self.jenkins_master_task,
+                cloud_map_options=ecs.CloudMapOptions(name="master", dns_record_type=sd.DnsRecordType('A')),
                 desired_count=1,
+                min_healthy_percent=0,
+                max_healthy_percent=100,
                 enable_ecs_managed_tags=True,
-                task_image_options=self.jenkins_task,
-                cloud_map_options=ecs.CloudMapOptions(name="master"),
+                cluster=self.cluster.cluster
+            )
+
+            self.target_group = self.listener.add_targets(
+                "JenkinsMasterTarget",
+                port=80,
+                targets=[
+                    self.jenkins_master_service.load_balancer_target(
+                        container_name=self.jenkins_master_task.default_container.container_name,
+                        container_port=8080,
+                    )
+                ]
             )
 
             self.jenkins_master_service.cluster.add_capacity(
                 "Ec2",
                 instance_type=ec2.InstanceType("t3.xlarge"),
-                key_name="jenkinsonaws"
+                key_name="jenkinsonaws",
             )
 
             # TODO: Add EFS if EC2 enabled
@@ -91,7 +155,7 @@ class JenkinsMaster(core.Stack):
         )
 
         # Enable connection between Master and Worker
-        self.jenkins_master_service.service.connections.allow_from(
+        self.jenkins_master_service.connections.allow_from(
             other=self.worker.worker_security_group,
             port_range=ec2.Port(
                 protocol=ec2.Protocol.TCP,
@@ -102,7 +166,7 @@ class JenkinsMaster(core.Stack):
         )
 
         # Enable connection between Master and Worker on 8080
-        self.jenkins_master_service.service.connections.allow_from(
+        self.jenkins_master_service.connections.allow_from(
             other=self.worker.worker_security_group,
             port_range=ec2.Port(
                 protocol=ec2.Protocol.TCP,
@@ -113,7 +177,7 @@ class JenkinsMaster(core.Stack):
         )
 
         # IAM Statements to allow jenkins ecs plugin to talk to ECS as well as the Jenkins cluster #
-        self.jenkins_master_service.task_definition.add_to_task_role_policy(
+        self.jenkins_master_task.add_to_task_role_policy(
             iam.PolicyStatement(
                 actions=[
                     "ecs:RegisterTaskDefinition",
@@ -130,7 +194,7 @@ class JenkinsMaster(core.Stack):
             )
         )
 
-        self.jenkins_master_service.task_definition.add_to_task_role_policy(
+        self.jenkins_master_task.add_to_task_role_policy(
             iam.PolicyStatement(
                 actions=[
                     "ecs:ListContainerInstances"
@@ -141,7 +205,7 @@ class JenkinsMaster(core.Stack):
             )
         )
 
-        self.jenkins_master_service.task_definition.add_to_task_role_policy(
+        self.jenkins_master_task.add_to_task_role_policy(
             iam.PolicyStatement(
                 actions=[
                     "ecs:RunTask"
@@ -155,7 +219,7 @@ class JenkinsMaster(core.Stack):
             )
         )
 
-        self.jenkins_master_service.task_definition.add_to_task_role_policy(
+        self.jenkins_master_task.add_to_task_role_policy(
             iam.PolicyStatement(
                 actions=[
                     "ecs:StopTask"
@@ -174,7 +238,7 @@ class JenkinsMaster(core.Stack):
             )
         )
 
-        self.jenkins_master_service.task_definition.add_to_task_role_policy(
+        self.jenkins_master_task.add_to_task_role_policy(
             iam.PolicyStatement(
                 actions=[
                     "iam:PassRole"
