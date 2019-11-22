@@ -1,3 +1,4 @@
 aws-cdk.core
 aws-cdk.aws_ecs
 aws-cdk.aws_ecs_patterns
+aws-cdk.aws_elasticloadbalancingv2

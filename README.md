@@ -21,11 +21,26 @@
 ```
 
 
-## How to deploy
+## Requirements
 
 To deploy this environment, we will use the [aws-cdk](https://github.com/aws/aws-cdk)
 - Please follow the requirements to install from the cdk github repo
 - Tested with the following version: `1.15.0 (build bdbe3aa)`
+
+## Fargate Jenkins (Master and Workers)
+
+Set an environment variable as follows:
+```bash
+export FARGATE_ENABLED=True
+```
+
+## EC2 Backed Master and Fargate Workers
+Set an environment variable as follows:
+```bash
+export EC2_ENABLED=True
+```
+
+## Validate configs and deploy
 
 Navigate to the cdk directory, and run:
 
