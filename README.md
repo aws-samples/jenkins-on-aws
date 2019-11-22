@@ -1,5 +1,9 @@
 # Jenkins on AWS
 
+## Architecture
+
+![ArchDiagram](./arch.png)
+
 ## Project Structure
 
 ```
