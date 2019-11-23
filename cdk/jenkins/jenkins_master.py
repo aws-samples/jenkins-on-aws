@@ -81,6 +81,7 @@ class JenkinsMaster(core.Stack):
             self.jenkins_master_task = ecs.Ec2TaskDefinition(
                 self, "JenkinsMasterTaskDef",
                 network_mode=ecs.NetworkMode.AWS_VPC,
+                volumes=[ecs.Volume(name="efs_mount", host=ecs.Host(source_path='/mnt/efs'))],
             )
 
             self.jenkins_master_task.add_container(
@@ -92,7 +93,7 @@ class JenkinsMaster(core.Stack):
                     # https://github.com/jenkinsci/docker/blob/master/README.md#passing-jvm-parameters
                     'JAVA_OPTS': '-Djenkins.install.runSetupWizard=false',
                     # https://github.com/jenkinsci/configuration-as-code-plugin/blob/master/README.md#getting-started
-                    'CASC_JENKINS_CONFIG': '/var/jenkins_home/config-as-code.yaml',
+                    'CASC_JENKINS_CONFIG': '/config-as-code.yaml',
                     'network_stack': self.vpc.stack_name,
                     'cluster_stack': self.cluster.stack_name,
                     'worker_stack': self.worker.stack_name,
@@ -112,6 +113,14 @@ class JenkinsMaster(core.Stack):
                 ),
             )
 
+            self.jenkins_master_task.default_container.add_mount_points(
+                ecs.MountPoint(
+                    container_path='/var/jenkins_home',
+                    source_volume="efs_mount",
+                    read_only=False
+                )
+            )
+
             self.jenkins_master_task.default_container.add_port_mappings(
                 ecs.PortMapping(
                     container_port=8080,
@@ -127,7 +136,7 @@ class JenkinsMaster(core.Stack):
                 min_healthy_percent=0,
                 max_healthy_percent=100,
                 enable_ecs_managed_tags=True,
-                cluster=self.cluster.cluster
+                cluster=self.cluster.cluster,
             )
 
             self.target_group = self.listener.add_targets(
@@ -138,16 +147,9 @@ class JenkinsMaster(core.Stack):
                         container_name=self.jenkins_master_task.default_container.container_name,
                         container_port=8080,
                     )
-                ]
+                ],
+                deregistration_delay=core.Duration.seconds(10)
             )
-
-            self.jenkins_master_service.cluster.add_capacity(
-                "Ec2",
-                instance_type=ec2.InstanceType("t3.xlarge"),
-                key_name="jenkinsonaws",
-            )
-
-            # TODO: Add EFS if EC2 enabled
 
         # Opening port 5000 for master <--> worker communications
         self.jenkins_master_service.task_definition.default_container.add_port_mappings(
