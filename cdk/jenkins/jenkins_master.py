@@ -42,7 +42,7 @@ class JenkinsMaster(core.Stack):
                     # https://github.com/jenkinsci/docker/blob/master/README.md#passing-jvm-parameters
                     'JAVA_OPTS': '-Djenkins.install.runSetupWizard=false',
                     # https://github.com/jenkinsci/configuration-as-code-plugin/blob/master/README.md#getting-started
-                    'CASC_JENKINS_CONFIG': '/var/jenkins_home/config-as-code.yaml',
+                    'CASC_JENKINS_CONFIG': '/config-as-code.yaml',
                     'network_stack': self.vpc.stack_name,
                     'cluster_stack': self.cluster.stack_name,
                     'worker_stack': self.worker.stack_name,
