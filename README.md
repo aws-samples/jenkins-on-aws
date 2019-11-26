@@ -29,15 +29,15 @@ To deploy this environment, we will use the [aws-cdk](https://github.com/aws/aws
 
 ## Fargate Jenkins (Master and Workers)
 
-Set an environment variable as follows:
+Set config.ini
 ```bash
-export FARGATE_ENABLED=True
+fargate_enabled = yes
 ```
 
 ## EC2 Backed Master and Fargate Workers
-Set an environment variable as follows:
+Set config.ini
 ```bash
-export EC2_ENABLED=True
+ec2_enabled = yes
 ```
 
 ## Validate configs and deploy

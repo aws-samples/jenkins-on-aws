@@ -32,7 +32,7 @@ class JenkinsMaster(core.Stack):
         )
 
         # TODO: Make cpu, memory, instance type, and other variable items to environment variables
-        if getenv('FARGATE_ENABLED') or not getenv('EC2_ENABLED'):
+        if config['DEFAULT']['fargate_enabled'] == "yes" or not config['DEFAULT']['ec2_enabled'] == "yes":
             # Task definition details to define the Jenkins master container
             self.jenkins_task = ecs_patterns.ApplicationLoadBalancedTaskImageOptions(
                 image=ecs.ContainerImage.from_ecr_repository(self.container_image.repository),
@@ -48,7 +48,7 @@ class JenkinsMaster(core.Stack):
                     'worker_stack': self.worker.stack_name,
                     'cluster_arn': self.cluster.cluster.cluster_arn,
                     'aws_region': getenv('CDK_DEFAULT_REGION'),
-                    'jenkins_url': 'http://master.jenkins:8080',  # TODO: make this a variable
+                    'jenkins_url': config['DEFAULT']['jenkins_url'], 
                     'subnet_ids': ",".join([x.subnet_id for x in self.vpc.vpc.private_subnets]),
                     'security_group_ids': self.worker.worker_security_group.security_group_id,
                     'execution_role_arn': self.worker.worker_execution_role.role_arn,
@@ -73,7 +73,7 @@ class JenkinsMaster(core.Stack):
             self.jenkins_master_service = self.jenkins_master_service_main.service
             self.jenkins_master_task = self.jenkins_master_service.task_definition
 
-        if getenv('EC2_ENABLED'):
+        if config['DEFAULT']['ec2_enabled'] == "yes":
             self.jenkins_load_balancer = elb.ApplicationLoadBalancer(
                 self, "JenkinsMasterELB",
                 vpc=self.vpc.vpc,
