@@ -30,7 +30,6 @@ class JenkinsMaster(core.Stack):
             directory='./docker/master/'
         )
 
-        # TODO: Make cpu, memory, instance type, and other variable items to environment variables
         if config['DEFAULT']['fargate_enabled'] == "yes" or not config['DEFAULT']['ec2_enabled'] == "yes":
             # Task definition details to define the Jenkins master container
             self.jenkins_task = ecs_patterns.ApplicationLoadBalancedTaskImageOptions(
@@ -60,8 +59,8 @@ class JenkinsMaster(core.Stack):
             # Create the Jenkins master service
             self.jenkins_master_service_main = ecs_patterns.ApplicationLoadBalancedFargateService(
                 self, "JenkinsMasterService",
-                cpu=4096,
-                memory_limit_mib=8192,
+                cpu=int(config['DEFAULT']['fargate_cpu']),
+                memory_limit_mib=int(config['DEFAULT']['fargate_memory_limit_mib']),
                 cluster=self.cluster.cluster,
                 desired_count=1,
                 enable_ecs_managed_tags=True,
@@ -90,8 +89,8 @@ class JenkinsMaster(core.Stack):
             self.jenkins_master_task.add_container(
                 "JenkinsMasterContainer",
                 image=ecs.ContainerImage.from_ecr_repository(self.container_image.repository),
-                cpu=4096,
-                memory_limit_mib=8192,
+                cpu=int(config['DEFAULT']['ec2_cpu']),
+                memory_limit_mib=int(config['DEFAULT']['ec2_memory_limit_mib']),
                 environment={
                     # https://github.com/jenkinsci/docker/blob/master/README.md#passing-jvm-parameters
                     'JAVA_OPTS': '-Djenkins.install.runSetupWizard=false',
