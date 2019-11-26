@@ -5,7 +5,6 @@ from aws_cdk import (
     core
 )
 
-from os import getenv
 from configparser import ConfigParser
 
 config = ConfigParser()
@@ -26,10 +25,10 @@ class ECSCluster(core.Stack):
             default_cloud_map_namespace=aws_ecs.CloudMapNamespaceOptions(name=service_discovery_namespace)
         )
 
-        if getenv('EC2_ENABLED'):
+        if config['DEFAULT']['ec2_enabled'] == "yes":
             self.asg = self.cluster.add_capacity(
                 "Ec2",
-                instance_type=aws_ec2.InstanceType("t3.xlarge"),
+                instance_type=aws_ec2.InstanceType(config['DEFAULT']['instance_type']),
                 key_name="jenkinsonaws",
             )
 
