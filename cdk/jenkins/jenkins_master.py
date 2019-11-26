@@ -10,7 +10,6 @@ from aws_cdk import (
     core
 )
 
-from os import getenv
 from configparser import ConfigParser
 
 config = ConfigParser()
@@ -47,7 +46,7 @@ class JenkinsMaster(core.Stack):
                     'cluster_stack': self.cluster.stack_name,
                     'worker_stack': self.worker.stack_name,
                     'cluster_arn': self.cluster.cluster.cluster_arn,
-                    'aws_region': getenv('CDK_DEFAULT_REGION'),
+                    'aws_region': config['DEFAULT']['region'],
                     'jenkins_url': config['DEFAULT']['jenkins_url'], 
                     'subnet_ids': ",".join([x.subnet_id for x in self.vpc.vpc.private_subnets]),
                     'security_group_ids': self.worker.worker_security_group.security_group_id,
@@ -102,8 +101,8 @@ class JenkinsMaster(core.Stack):
                     'cluster_stack': self.cluster.stack_name,
                     'worker_stack': self.worker.stack_name,
                     'cluster_arn': self.cluster.cluster.cluster_arn,
-                    'aws_region': getenv('CDK_DEFAULT_REGION'),
-                    'jenkins_url': 'http://master.jenkins:8080',  # TODO: make this a variable
+                    'aws_region': config['DEFAULT']['region'],
+                    'jenkins_url': config['DEFAULT']['jenkins_url'],  
                     'subnet_ids': ",".join([x.subnet_id for x in self.vpc.vpc.private_subnets]),
                     'security_group_ids': self.worker.worker_security_group.security_group_id,
                     'execution_role_arn': self.worker.worker_execution_role.role_arn,
