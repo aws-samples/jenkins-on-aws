@@ -6,6 +6,10 @@ from aws_cdk import (
 )
 
 from os import getenv
+from configparser import ConfigParser
+
+config = ConfigParser()
+config.read('config.ini')
 
 
 class ECSCluster(core.Stack):

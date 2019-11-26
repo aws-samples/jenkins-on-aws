@@ -2,6 +2,10 @@ from aws_cdk import (
     aws_ec2,
     core
 )
+from configparser import ConfigParser
+
+config = ConfigParser()
+config.read('config.ini')
 
 
 class Network(core.Stack):
@@ -11,6 +15,6 @@ class Network(core.Stack):
 
         self.vpc = aws_ec2.Vpc(
             self, "Vpc",
-            cidr='10.0.0.0/24',
+            cidr=config['DEFAULT']['cidr'],
         )
 

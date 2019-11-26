@@ -2,13 +2,16 @@
 
 from aws_cdk import core
 from os import getenv
-
+from configparser import ConfigParser
 from jenkins.network import Network
 from jenkins.ecs import ECSCluster
 from jenkins.jenkins_master import JenkinsMaster
 from jenkins.jenkins_worker import JenkinsWorker
 
-stack_name = 'JenkinsOnAWS' # TODO: Source this as an environment variable
+config = ConfigParser()
+config.read('config.ini')
+
+stack_name = config['DEFAULT']['stack_name'] 
 account = getenv('CDK_DEFAULT_ACCOUNT')
 region = getenv('CDK_DEFAULT_REGION')
 

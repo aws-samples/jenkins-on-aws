@@ -6,6 +6,10 @@ from aws_cdk import (
     core
 )
 
+from configparser import ConfigParser
+
+config = ConfigParser()
+config.read('config.ini')
 
 class JenkinsWorker(core.Stack):
 
