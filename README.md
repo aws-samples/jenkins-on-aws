@@ -1,5 +1,11 @@
 # Jenkins on AWS
 
+## What is this?
+This project will build and deploy an immutable, fault tolerant, and cost effective Jenkins environment in AWS using ECS. All Jenkins images are managed within the repository (pulled from upstream) and fully configurable as code. Plugin installation is automated, including versioning, as well as configured through the Configuration as Code [plugin](https://jenkins.io/projects/jcasc/).
+
+## Why
+Managing Jenkins is hard. From plugin management and configuration details, to ensuring that the nodes are up to date and running, it's a lot of work and susceptible to issues. With this platform, you inherit the [Well Architected](https://aws.amazon.com/architecture/well-architected/) best practices. 
+
 ## Architecture
 
 ![ArchDiagram](./arch.png)
@@ -67,6 +73,6 @@ cdk deploy Jenkins*
 _Note:_ You will be prompted for approval during the stages of the deploy. Follow the instructions on the prompt when asked.
 
 
-That's it! You now have a fully serverless Jenkins implementation running on AWS Fargate with worker nodes automatically configured to run on an as needed basis.
+That's it! You now have a fully automated Jenkins implementation running on AWS Fargate with worker nodes automatically configured to run on an as needed basis.
 
 
