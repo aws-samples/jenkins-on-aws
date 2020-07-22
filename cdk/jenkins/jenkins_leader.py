@@ -16,7 +16,7 @@ config = ConfigParser()
 config.read('config.ini')
 
 
-class JenkinsMaster(core.Stack):
+class JenkinsLeader(core.Stack):
 
     def __init__(self, scope: core.Stack, id: str, cluster, vpc, worker, **kwargs) -> None:
         super().__init__(scope, id, **kwargs)
@@ -24,22 +24,22 @@ class JenkinsMaster(core.Stack):
         self.vpc = vpc
         self.worker = worker
 
-        # Building a custom image for jenkins master.
+        # Building a custom image for jenkins leader.
         self.container_image = ecr.DockerImageAsset(
-            self, "JenkinsMasterDockerImage",
-            directory='./docker/master/'
+            self, "JenkinsleaderDockerImage",
+            directory='./docker/leader/'
         )
 
         if config['DEFAULT']['fargate_enabled'] == "yes" or not config['DEFAULT']['ec2_enabled'] == "yes":
-            # Task definition details to define the Jenkins master container
+            # Task definition details to define the Jenkins leader container
             self.jenkins_task = ecs_patterns.ApplicationLoadBalancedTaskImageOptions(
                 image=ecs.ContainerImage.from_docker_image_asset(self.container_image),
                 container_port=8080,
                 enable_logging=True,
                 environment={
-                    # https://github.com/jenkinsci/docker/blob/master/README.md#passing-jvm-parameters
+                    # https://github.com/jenkinsci/docker/blob/leader/README.md#passing-jvm-parameters
                     'JAVA_OPTS': '-Djenkins.install.runSetupWizard=false',
-                    # https://github.com/jenkinsci/configuration-as-code-plugin/blob/master/README.md#getting-started
+                    # https://github.com/jenkinsci/configuration-as-code-plugin/blob/leader/README.md#getting-started
                     'CASC_JENKINS_CONFIG': '/config-as-code.yaml',
                     'network_stack': self.vpc.stack_name,
                     'cluster_stack': self.cluster.stack_name,
@@ -56,45 +56,45 @@ class JenkinsMaster(core.Stack):
                 },
             )
 
-            # Create the Jenkins master service
-            self.jenkins_master_service_main = ecs_patterns.ApplicationLoadBalancedFargateService(
-                self, "JenkinsMasterService",
+            # Create the Jenkins leader service
+            self.jenkins_leader_service_main = ecs_patterns.ApplicationLoadBalancedFargateService(
+                self, "JenkinsleaderService",
                 cpu=int(config['DEFAULT']['fargate_cpu']),
                 memory_limit_mib=int(config['DEFAULT']['fargate_memory_limit_mib']),
                 cluster=self.cluster.cluster,
                 desired_count=1,
                 enable_ecs_managed_tags=True,
                 task_image_options=self.jenkins_task,
-                cloud_map_options=ecs.CloudMapOptions(name="master", dns_record_type=sd.DnsRecordType('A'))
+                cloud_map_options=ecs.CloudMapOptions(name="leader", dns_record_type=sd.DnsRecordType('A'))
             )
 
-            self.jenkins_master_service = self.jenkins_master_service_main.service
-            self.jenkins_master_task = self.jenkins_master_service.task_definition
+            self.jenkins_leader_service = self.jenkins_leader_service_main.service
+            self.jenkins_leader_task = self.jenkins_leader_service.task_definition
 
         if config['DEFAULT']['ec2_enabled'] == "yes":
             self.jenkins_load_balancer = elb.ApplicationLoadBalancer(
-                self, "JenkinsMasterELB",
+                self, "JenkinsleaderELB",
                 vpc=self.vpc.vpc,
                 internet_facing=True,
             )
 
             self.listener = self.jenkins_load_balancer.add_listener("Listener", port=80)
 
-            self.jenkins_master_task = ecs.Ec2TaskDefinition(
-                self, "JenkinsMasterTaskDef",
+            self.jenkins_leader_task = ecs.Ec2TaskDefinition(
+                self, "JenkinsleaderTaskDef",
                 network_mode=ecs.NetworkMode.AWS_VPC,
                 volumes=[ecs.Volume(name="efs_mount", host=ecs.Host(source_path='/mnt/efs'))],
             )
 
-            self.jenkins_master_task.add_container(
-                "JenkinsMasterContainer",
+            self.jenkins_leader_task.add_container(
+                "JenkinsleaderContainer",
                 image=ecs.ContainerImage.from_ecr_repository(self.container_image.repository),
                 cpu=int(config['DEFAULT']['ec2_cpu']),
                 memory_limit_mib=int(config['DEFAULT']['ec2_memory_limit_mib']),
                 environment={
-                    # https://github.com/jenkinsci/docker/blob/master/README.md#passing-jvm-parameters
+                    # https://github.com/jenkinsci/docker/blob/leader/README.md#passing-jvm-parameters
                     'JAVA_OPTS': '-Djenkins.install.runSetupWizard=false',
-                    # https://github.com/jenkinsci/configuration-as-code-plugin/blob/master/README.md#getting-started
+                    # https://github.com/jenkinsci/configuration-as-code-plugin/blob/leader/README.md#getting-started
                     'CASC_JENKINS_CONFIG': '/config-as-code.yaml',
                     'network_stack': self.vpc.stack_name,
                     'cluster_stack': self.cluster.stack_name,
@@ -110,12 +110,12 @@ class JenkinsMaster(core.Stack):
                     'worker_log_stream_prefix': self.worker.worker_log_stream.log_stream_name
                 },
                 logging=ecs.LogDriver.aws_logs(
-                    stream_prefix="JenkinsMaster",
+                    stream_prefix="Jenkinsleader",
                     log_retention=logs.RetentionDays.ONE_WEEK
                 ),
             )
 
-            self.jenkins_master_task.default_container.add_mount_points(
+            self.jenkins_leader_task.default_container.add_mount_points(
                 ecs.MountPoint(
                     container_path='/var/jenkins_home',
                     source_volume="efs_mount",
@@ -123,17 +123,17 @@ class JenkinsMaster(core.Stack):
                 )
             )
 
-            self.jenkins_master_task.default_container.add_port_mappings(
+            self.jenkins_leader_task.default_container.add_port_mappings(
                 ecs.PortMapping(
                     container_port=8080,
                     host_port=8080
                 )
             )
 
-            self.jenkins_master_service = ecs.Ec2Service(
-                self, "EC2MasterService",
-                task_definition=self.jenkins_master_task,
-                cloud_map_options=ecs.CloudMapOptions(name="master", dns_record_type=sd.DnsRecordType('A')),
+            self.jenkins_leader_service = ecs.Ec2Service(
+                self, "EC2leaderService",
+                task_definition=self.jenkins_leader_task,
+                cloud_map_options=ecs.CloudMapOptions(name="leader", dns_record_type=sd.DnsRecordType('A')),
                 desired_count=1,
                 min_healthy_percent=0,
                 max_healthy_percent=100,
@@ -142,46 +142,46 @@ class JenkinsMaster(core.Stack):
             )
 
             self.target_group = self.listener.add_targets(
-                "JenkinsMasterTarget",
+                "JenkinsleaderTarget",
                 port=80,
                 targets=[
-                    self.jenkins_master_service.load_balancer_target(
-                        container_name=self.jenkins_master_task.default_container.container_name,
+                    self.jenkins_leader_service.load_balancer_target(
+                        container_name=self.jenkins_leader_task.default_container.container_name,
                         container_port=8080,
                     )
                 ],
                 deregistration_delay=core.Duration.seconds(10)
             )
 
-        # Opening port 5000 for master <--> worker communications
-        self.jenkins_master_service.task_definition.default_container.add_port_mappings(
+        # Opening port 5000 for leader <--> worker communications
+        self.jenkins_leader_service.task_definition.default_container.add_port_mappings(
             ecs.PortMapping(container_port=50000, host_port=50000)
         )
 
-        # Enable connection between Master and Worker
-        self.jenkins_master_service.connections.allow_from(
+        # Enable connection between leader and Worker
+        self.jenkins_leader_service.connections.allow_from(
             other=self.worker.worker_security_group,
             port_range=ec2.Port(
                 protocol=ec2.Protocol.TCP,
-                string_representation='Master to Worker 50000',
+                string_representation='leader to Worker 50000',
                 from_port=50000,
                 to_port=50000
             )
         )
 
-        # Enable connection between Master and Worker on 8080
-        self.jenkins_master_service.connections.allow_from(
+        # Enable connection between leader and Worker on 8080
+        self.jenkins_leader_service.connections.allow_from(
             other=self.worker.worker_security_group,
             port_range=ec2.Port(
                 protocol=ec2.Protocol.TCP,
-                string_representation='Master to Worker 8080',
+                string_representation='leader to Worker 8080',
                 from_port=8080,
                 to_port=8080
             )
         )
 
         # IAM Statements to allow jenkins ecs plugin to talk to ECS as well as the Jenkins cluster #
-        self.jenkins_master_task.add_to_task_role_policy(
+        self.jenkins_leader_task.add_to_task_role_policy(
             iam.PolicyStatement(
                 actions=[
                     "ecs:RegisterTaskDefinition",
@@ -198,7 +198,7 @@ class JenkinsMaster(core.Stack):
             )
         )
 
-        self.jenkins_master_task.add_to_task_role_policy(
+        self.jenkins_leader_task.add_to_task_role_policy(
             iam.PolicyStatement(
                 actions=[
                     "ecs:ListContainerInstances"
@@ -209,7 +209,7 @@ class JenkinsMaster(core.Stack):
             )
         )
 
-        self.jenkins_master_task.add_to_task_role_policy(
+        self.jenkins_leader_task.add_to_task_role_policy(
             iam.PolicyStatement(
                 actions=[
                     "ecs:RunTask"
@@ -223,7 +223,7 @@ class JenkinsMaster(core.Stack):
             )
         )
 
-        self.jenkins_master_task.add_to_task_role_policy(
+        self.jenkins_leader_task.add_to_task_role_policy(
             iam.PolicyStatement(
                 actions=[
                     "ecs:StopTask"
@@ -242,7 +242,7 @@ class JenkinsMaster(core.Stack):
             )
         )
 
-        self.jenkins_master_task.add_to_task_role_policy(
+        self.jenkins_leader_task.add_to_task_role_policy(
             iam.PolicyStatement(
                 actions=[
                     "iam:PassRole"
