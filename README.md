@@ -6,7 +6,7 @@ This project will build and deploy an immutable, fault tolerant, and cost effect
 ## Why
 Managing Jenkins is hard. From plugin management and configuration details, to ensuring that the nodes are up to date and running, it's a lot of work and susceptible to issues. 
 
-Please note, this is an *example* and not production ready. You are still responsible for securing Jenkins (enabling TLS at the ALB, adding authentication, etc). This intent of this project is to provide an example of running Jenkins on ECS.
+Please note, this is an **example** and **not production ready**. You are still responsible for securing Jenkins (enabling TLS at the ALB, adding authentication, etc). This intent of this project is to provide an example of running Jenkins on ECS.
 
 ## Architecture
 
