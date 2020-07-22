@@ -1,4 +1,4 @@
-FROM jenkins/jenkins:lts
+FROM jenkins/jenkins:2.235.2-lts
 
 # Install custom plugins
 COPY plugins.txt /usr/share/jenkins/ref/plugins.txt

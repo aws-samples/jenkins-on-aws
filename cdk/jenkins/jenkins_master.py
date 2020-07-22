@@ -33,7 +33,7 @@ class JenkinsMaster(core.Stack):
         if config['DEFAULT']['fargate_enabled'] == "yes" or not config['DEFAULT']['ec2_enabled'] == "yes":
             # Task definition details to define the Jenkins master container
             self.jenkins_task = ecs_patterns.ApplicationLoadBalancedTaskImageOptions(
-                image=ecs.ContainerImage.from_ecr_repository(self.container_image.repository),
+                image=ecs.ContainerImage.from_docker_image_asset(self.container_image),
                 container_port=8080,
                 enable_logging=True,
                 environment={
