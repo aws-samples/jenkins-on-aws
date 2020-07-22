@@ -6,6 +6,8 @@ This project will build and deploy an immutable, fault tolerant, and cost effect
 ## Why
 Managing Jenkins is hard. From plugin management and configuration details, to ensuring that the nodes are up to date and running, it's a lot of work and susceptible to issues. With this platform, you inherit the [Well Architected](https://aws.amazon.com/architecture/well-architected/) best practices. 
 
+Please note, this is an example and not production ready. You are still responsible for securing Jenkins (enabling TLS at the ALB, adding authentication, etc).
+
 ## Architecture
 
 ![ArchDiagram](./arch.png)
