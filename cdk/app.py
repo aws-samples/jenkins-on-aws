@@ -5,7 +5,7 @@ from os import getenv
 from configparser import ConfigParser
 from jenkins.network import Network
 from jenkins.ecs import ECSCluster
-from jenkins.jenkins_master import JenkinsMaster
+from jenkins.jenkins_leader import JenkinsLeader
 from jenkins.jenkins_worker import JenkinsWorker
 
 config = ConfigParser()
@@ -21,6 +21,6 @@ app = core.App()
 network = Network(app, stack_name + 'Network')
 ecs_cluster = ECSCluster(app, stack_name + 'ECS', vpc=network.vpc, service_discovery_namespace=service_discovery_namespace)
 jenkins_workers = JenkinsWorker(app, stack_name + "Worker", vpc=network.vpc, cluster=ecs_cluster)
-jenkins_master_service = JenkinsMaster(app, stack_name + 'JenkinsMaster', cluster=ecs_cluster, vpc=network, worker=jenkins_workers)
+jenkins_leader_service = JenkinsLeader(app, stack_name + 'JenkinsLeader', cluster=ecs_cluster, vpc=network, worker=jenkins_workers)
 
 app.synth()

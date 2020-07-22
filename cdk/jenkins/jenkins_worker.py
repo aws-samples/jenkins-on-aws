@@ -18,17 +18,17 @@ class JenkinsWorker(core.Stack):
         self.vpc = vpc
         self.cluster = cluster
 
-        # Building a custom image for jenkins master.
+        # Building a custom image for jenkins leader.
         self.container_image = ecr.DockerImageAsset(
             self, "JenkinsWorkerDockerImage",
             directory='./docker/worker/'
         )
 
-        # Security group to connect workers to master
+        # Security group to connect workers to leader
         self.worker_security_group = ec2.SecurityGroup(
             self, "WorkerSecurityGroup",
             vpc=self.vpc,
-            description="Jenkins Worker access to Jenkins Master",
+            description="Jenkins Worker access to Jenkins leader",
         )
 
         # IAM execution role for the workers to pull from ECR and push to CloudWatch logs

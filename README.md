@@ -17,7 +17,7 @@ Managing Jenkins is hard. From plugin management and configuration details, to e
 
 ./cdk/ <-- Deployment configuration
 
-./cdk/docker/ <-- Dockerfiles and associated config files for Master and Worker images
+./cdk/docker/ <-- Dockerfiles and associated config files for Leader and Worker images
 
 ./cdk/app.py <-- cdk application file where all stacks are instantiated and built
 
@@ -33,14 +33,14 @@ To deploy this environment, we will use the [aws-cdk](https://github.com/aws/aws
 - Please follow the requirements to install from the cdk github repo
 - Tested with the following version: `1.15.0 (build bdbe3aa)`
 
-## Fargate Jenkins (Master and Workers)
+## Fargate Jenkins (Leader and Workers)
 
 Set config.ini
 ```bash
 fargate_enabled = yes
 ```
 
-## EC2 Backed Master and Fargate Workers
+## EC2 Backed Leader and Fargate Workers
 Set config.ini
 ```bash
 ec2_enabled = yes
@@ -59,7 +59,7 @@ Output should look something like:
 ```console
 [user@computer cdk (cdk)]$ cdk synth
 Successfully synthesized to jenkins-on-aws/cdk/cdk.out
-Supply a stack name (JenkinsOnAWSNetwork, JenkinsOnAWSECS, JenkinsOnAWSWorker, JenkinsOnAWSJenkinsMaster) to display its template.
+Supply a stack name (JenkinsOnAWSNetwork, JenkinsOnAWSECS, JenkinsOnAWSWorker, JenkinsOnAWSJenkinsLeader) to display its template.
 ```
 
 Feel free to check out the [CloudFormation](https://aws.amazon.com/cloudformation/) templates created by the cdk in the `cdk.out` directory
