@@ -19,7 +19,7 @@ Please note, this is an example and not production ready. You are still responsi
 
 ./cdk/ <-- Deployment configuration
 
-./cdk/docker/ <-- Dockerfiles and associated config files for Leader and Worker images
+./cdk/docker/ <-- Dockerfiles and associated config files for Leader and Worker images. The cdk will build these images on a cdk deploy.
 
 ./cdk/app.py <-- cdk application file where all stacks are instantiated and built
 
@@ -33,7 +33,7 @@ Please note, this is an example and not production ready. You are still responsi
 
 To deploy this environment, we will use the [aws-cdk](https://github.com/aws/aws-cdk)
 - Please follow the requirements to install from the cdk github repo
-- Tested with the following version: `1.15.0 (build bdbe3aa)`
+- Tested with the following version: `1.53.0 (build 6c326cb)`
 
 ## Fargate Jenkins (Leader and Workers)
 
