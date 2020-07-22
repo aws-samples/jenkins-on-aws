@@ -4,9 +4,9 @@
 This project will build and deploy an immutable, fault tolerant, and cost effective Jenkins environment in AWS using ECS. All Jenkins images are managed within the repository (pulled from upstream) and fully configurable as code. Plugin installation is automated, including versioning, as well as configured through the Configuration as Code [plugin](https://jenkins.io/projects/jcasc/).
 
 ## Why
-Managing Jenkins is hard. From plugin management and configuration details, to ensuring that the nodes are up to date and running, it's a lot of work and susceptible to issues. With this platform, you inherit the [Well Architected](https://aws.amazon.com/architecture/well-architected/) best practices. 
+Managing Jenkins is hard. From plugin management and configuration details, to ensuring that the nodes are up to date and running, it's a lot of work and susceptible to issues. 
 
-Please note, this is an example and not production ready. You are still responsible for securing Jenkins (enabling TLS at the ALB, adding authentication, etc).
+Please note, this is an *example* and not production ready. You are still responsible for securing Jenkins (enabling TLS at the ALB, adding authentication, etc). This intent of this project is to provide an example of running Jenkins on ECS.
 
 ## Architecture
 
