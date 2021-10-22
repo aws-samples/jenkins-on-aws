@@ -6,7 +6,7 @@ from os import getenv
 
 def main():
     # This value comes as a build env var: `SSM_CONFIG_PARAM_NAME`
-    _env = Environment(loader=FileSystemLoader('/'))
+    _env = Environment(loader=FileSystemLoader('/'), autoescape=True)
     _template = _env.get_template("/config-as-code.j2")
     _config_file = open("/config-as-code.yaml", "w")
 
