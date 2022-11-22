@@ -1,4 +1,5 @@
 jenkins:
+  mode: EXCLUSIVE # CHANGE: encourage jobs to run on workers
   clouds:
     - ecs:
         cluster: {{ECS_CLUSTER_ARN}}
@@ -6,12 +7,13 @@ jenkins:
         credentialsId: False
         regionName: {{AWS_REGION}}
         name: fargate-workers
+        numExecutors: 1 # FIX: https://github.com/jenkinsci/amazon-ecs-plugin/issues/291
         jenkinsUrl: {{JENKINS_URL}}
         templates:
           - label: fargate-workers
             templateName: fargate-worker-nodes
             # Build image and store in ECR. Benefits: fast download time, control image on your own
-            image: jenkins/jnlp-slave
+            image: jenkins/jnlp-slave:latest-jdk11 # FIX: prevent 52.0 not match 55.0 error
             launchType: FARGATE
             networkMode: awsvpc
             # Soft memory limit
@@ -29,4 +31,7 @@ jenkins:
                 value: {{LOG_GROUP}}
               - name: awslogs-stream-prefix
                 value: {{LOG_STREAM_PREFIX}}
+aws:
+  cloudWatchLogs:
+    logGroupName: {{LOG_GROUP}} # FIX: needs log group to launch workers
 
