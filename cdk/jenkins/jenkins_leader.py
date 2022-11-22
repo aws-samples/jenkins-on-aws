@@ -111,7 +111,7 @@ class JenkinsLeader(core.Stack):
                 },
                 logging=ecs.LogDriver.aws_logs(
                     stream_prefix="Jenkinsleader",
-                    log_retention=logs.RetentionDays.ONE_WEEK
+                    retention=logs.RetentionDays.ONE_WEEK # BUG: defaulting to 'never'
                 ),
             )
 
@@ -190,7 +190,12 @@ class JenkinsLeader(core.Stack):
                     "ecs:DescribeContainerInstances",
                     "ecs:ListTaskDefinitions",
                     "ecs:DescribeTaskDefinition",
-                    "ecs:DescribeTasks"
+                    "ecs:DescribeTasks",
+                    "logs:DescribeLogStreams",
+                    "logs:CreateLogStream",
+                    "logs:FilterLogEvents",
+                    "logs:PutLogEvents",
+                    "logs:GetLogEvents"
                 ],
                 resources=[
                     "*"
@@ -212,7 +217,8 @@ class JenkinsLeader(core.Stack):
         self.jenkins_leader_task.add_to_task_role_policy(
             iam.PolicyStatement(
                 actions=[
-                    "ecs:RunTask"
+                    "ecs:RunTask",
+                    "ecs:ListTagsForResource"
                 ],
                 resources=[
                     "arn:aws:ecs:{0}:{1}:task-definition/fargate-workers*".format(

@@ -1,8 +1,10 @@
-FROM jenkins/jenkins:2.235.5-lts
+FROM jenkins/jenkins:2.361.4-lts
 
 # Install custom plugins
 COPY plugins.txt /usr/share/jenkins/ref/plugins.txt
-RUN /usr/local/bin/install-plugins.sh < /usr/share/jenkins/ref/plugins.txt
+# Use built-in plugin tool to manage plugins
+RUN jenkins-plugin-cli --plugins -f /usr/share/jenkins/ref/plugins.txt
+
 
 COPY modify_casc.py /modify_casc.py
 COPY config-as-code.j2 /config-as-code.j2
@@ -10,7 +12,7 @@ COPY config-as-code.j2 /config-as-code.j2
 USER root
 
 RUN apt-get update &&\
-    apt-get install -y python-pip &&\
+    apt-get install -y python3-pip &&\
     pip install jinja2 dnspython &&\
     rm -rf /var/lib/apt/lists/* &&\
     touch /config-as-code.yaml &&\
